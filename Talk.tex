@@ -1,33 +1,35 @@
-
-\documentclass{beamer}
+\documentclass[12pt]{beamer}
 
 % for themes, etc.
 \mode<presentation>
 { \usetheme{Copenhagen}
-  \setbeamercolor{seahorse}{}
+  \usecolortheme{seahorse}{}
 }
+\setbeamertemplate{itemize items}[default]
+\setbeamertemplate{enumerate items}[default]
+
 
 \usepackage{times}  % fonts are up to you
+\usepackage{proof}
+\usepackage{listings}
+\usepackage{courier}
 \usepackage{graphicx}
+\usepackage{graphicx}
+
+\lstset{columns=fullflexible}
+\lstset{
+  literate={->}{$\to$ }{1}
+           {:E}{$\in$ }{1},
+  escapeinside=||,
+  moredelim=**[is][\color{red}]{@}{@},
+}
+\lstset{language=Haskell}
 
 % these will be used later in the title page
 \title{Programming in Vinyl}
 \author{Jon Sterling\\
-    Engineer, FOBO
+    FOBO
 }
-\date{July 17, 2005}
-
-% note: do NOT include a \maketitle line; also note that this title
-% material goes BEFORE the \begin{document}
-
-% have this if you'd like a recurring outline
-% \AtBeginSection[]  % "Beamer, do the following at the start of every section"
-% {
-% \begin{frame}<beamer>
-% \frametitle{Outline} % make a frame titled "Outline"
-% \tableofcontents[currentsection]  % show TOC and highlight current section
-% \end{frame}
-% }
 
 \begin{document}
 
@@ -36,135 +38,130 @@
 \titlepage
 \end{frame}
 
-\section{A Question from Grade School}
+\section{Extensible Records and Row Polymorphism}
 
 \begin{frame}
-\frametitle{A Question from Grade School}
+  \frametitle{Records in GHC 7.8}
+  Haskell Records are nominally typed. \pause
+  \[
+    \infer{
+      \Gamma\nvdash x : N.T
+    }{
+      \Gamma\vdash M.S \leadsto \{ \vec{rs} \} &
+      \Gamma\vdash N.T \leadsto \{ \vec{rs} \} &
+      \Gamma\vdash x : M.S
+    }
+  \]
+\end{frame}
 
-(Illustrating {\sc beamer}'s $\backslash$pause command.)
-\vskip 0.5in
+\begin{frame}[fragile]
+  \frametitle{Records in GHC 7.8}
+  Records may not share field names. \pause
 
-A couple of years ago, a fifth-grade teacher asked me to explain to her
-the reasoning behind the ``invert and multiply'' rule for dividing
-fractions, e.g.
-\pause  % makes overlay
-
-$$
-\frac{4}{5} \div \frac{2}{3} = \frac{4}{5} \times \frac{3}{2}
-$$
-
-\pause
-
-Let's try to find answers understandable by fifth graders (at least the
-more patient ones).
-
+  \begin{lstlisting}
+    data R = R { x :: X } |\pause|
+    data R' = R' { x :: X } -- ^ Error
+  \end{lstlisting}
 \end{frame}
 
 \begin{frame}
-\frametitle{Cookie Approach}
-
-Here let's just use intuition, understandable by fifth graders.
-
-\pause
-
-If we give 1/3 of a cookie to each person, how many people can we
-feed with 1 cookie?
-
-\pause
-
-Obviously, the answer is 3.
-
-So we've derived the ``invert and multiply'' rule in a special case:
-
-$$
-1 \div \frac{1}{3} = 3
-$$
-
+  \frametitle{Records in GHC 7.8}
+  \only<1>{Records are...}
+  \only<2>{\Large\centerline{anticompositional}}
 \end{frame}
 
 \begin{frame}
-\frametitle{Cookie Approach}
+  \frametitle{Records in Standard ML}
+  \pause
+  \Large\centerline{slightly better}
+\end{frame}
 
-But what if we give 2/3 of a cookie, not 1/3, to each person?
-
-We're giving 2$\times$ as much per person.
-
-So we can feed only 1/2 as many people.
-
-So we feed  $\frac{1}{2} \times 3 = \frac{3}{2}$.\footnote{One person
-gets only a half share.}
-
-So we've derived the ``invert and multiply'' rule in another case:
-
-$$
-1 \div \frac{2}{3} = \frac{3}{2}
-$$
-
+\begin{frame}[fragile]
+  \frametitle{Records in Standard ML}
+  \pause
+  Records are permutative, and not nominal.\pause
+  \[
+    \infer{\Gamma\vdash x:\{\vec{ts}\}}{
+      \Gamma\vdash x:\{\vec{ss}\} &
+      \Gamma\vdash ts\in\mathsf{permutations}(\vec{ss})
+    }
+  \]
 \end{frame}
 
 \begin{frame}
-\frametitle{Cookie Approach}
-
-Now, suppose we have only 4/5 of a cookie.
-
-Then we can feed only 4/5 as many people, i.e.
-
-$$
-\frac{4}{5} \times \frac{3}{2} ~ people
-$$
-
-\pause
-
-So we've derived the ``invert and multiply'' rule in the general case:
-
-$$
-\frac{4}{5} \div \frac{2}{3} = \frac{4}{5} \times \frac{3}{2}
-$$
-
-\end{frame}
-
-\section{A Geometry Proof}
-
-\begin{frame}
-\frametitle{A Geometry Proof}
-
-(Illustrating {\sc beamer}'s $\backslash$uncover command.)
-\vskip 0.5in
-
-\begin{theorem}
-The angles in a triangle sum to $180^{\circ}$.
-\end{theorem}
-
-\pause
-
-Plan:  Extend AC past C to D.  Draw CE parallel to AB.
-
+  \frametitle{Records in OCaml}
+  \only<1-4> {
+  OCaml records are\pause
+  \begin{itemize}
+    \item structural\pause
+    \item endowed with a subtyping relation\pause
+    \item but more importantly...
+  \end{itemize}
+  }
+  \only<5>{
+    \Large\centerline{row polymorphic}
+  }
 \end{frame}
 
 \begin{frame}
+  \frametitle{Row Polymorphism}
+  \pause
+  \emph{Pick out the parts you care about, and quantify the rest.}
 
-\begin{proof}
-
-\begin{tabular}{ll}
-% uncover makes advanced overlay
-\uncover<1->{1. u = y} & \uncover<2->{Alternate angles of a
-transveral.} \\
-\uncover<3->{2. v = x} & \uncover<4->{Consecutive interior angles of a
-transveral} \\
-\uncover<5->{3. z+u+v = $180^{\circ}$} & \uncover<6->{ACD is a straight
-line.} \\
-\uncover<7->{4. z+y+x = $180^{\circ}$} & \uncover<8->{Substitution
-from Steps 1 and 2.} \\
-\end{tabular}
-
-\end{proof}
-
+  \centerline{--- Someone wise}
 \end{frame}
 
-\section{More Advanced Features of {\sc beamer}}
+\begin{frame}
+  \frametitle{Row Polymorphism}
+  How do we express the type of a function which adds a field to a record?\pause
+  \only<2>{
+    \[
+      \infer{ f(x) : \{a:A, b:B\} }{ x : \{a:A\} }
+    \]
+  }
+  \only<3>{
+    \Large\centerline{NOPE}
+  }
+  \only<4>{
+    \[
+      \infer{ f(x) : \{a:A, b:B; \vec{rs}\} }{ x : \{a:A; \vec{rs}\} }
+    \]
+  }
+\end{frame}
 
 \begin{frame}
-\frametitle{More Advanced Features of {\sc beamer}}
+  \frametitle{Row Polymorphism}\pause
+  \begin{itemize}
+    \item supports type inference\pause
+    \item is compositional\pause
+    \item is \textbf{modular}\pause
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Roll Your Own in Haskell}\pause
+  \begin{lstlisting}
+    data (k :: Symbol) ::: (t :: *) = Field |\pause|
+
+    data Rec :: [*] -> * where |\pause|
+      RNil :: Rec '[] |\pause|
+      (:&) :: !t -> !(Rec rs) -> Rec ((k ::: t) ': rs)
+
+    |\pause|
+    class s :E (rs :: [*])|\pause|
+    (=:) : k ::: t -> t -> Rec '[ k ::: t ]|\pause|
+    (<+>) : Rec ss -> Rec ts -> Rec (ss ++ ts)
+  \end{lstlisting}
+\end{frame}
+\begin{frame}
+  \frametitle{Roll Your Own in Haskell}\pause
+  \[
+    \infer{
+      f\, x :: (\text{"a"} ::: A\in\vec{rs}, \text{"b"} ::: B\in\vec{rs}) \implies \mathsf{Rec}\ \vec{rs}
+    }{
+      x :: \text{"a"} ::: A\in\vec{rs}\implies \mathsf{Rec}\ \vec{rs}
+    }
+  \]
 \end{frame}
 
 \end{document}
