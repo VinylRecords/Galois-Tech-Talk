@@ -14,12 +14,14 @@
 \usepackage{listings}
 \usepackage{courier}
 \usepackage{graphicx}
-\usepackage{graphicx}
+\usepackage{stmaryrd}
 
 \lstset{columns=fullflexible}
 \lstset{
   literate={->}{$\to$ }{1}
-           {:E}{$\in$ }{1},
+           {:E}{$\in$ }{1}
+           {[|}{$\llbracket$ }{1}
+           {|]}{$\llbracket$ }{1},
   escapeinside=||,
   moredelim=**[is][\color{red}]{@}{@},
 }
@@ -141,15 +143,15 @@
 \begin{frame}[fragile]
   \frametitle{Roll Your Own in Haskell}\pause
   \begin{lstlisting}
-    data (k :: Symbol) ::: (t :: *) = Field |\pause|
+    data (s :: Symbol) ::: (t :: *) = Field |\pause|
 
     data Rec :: [*] -> * where |\pause|
       RNil :: Rec '[] |\pause|
-      (:&) :: !t -> !(Rec rs) -> Rec ((k ::: t) ': rs)
+      (:&) :: !t -> !(Rec rs) -> Rec ((s ::: t) ': rs)
 
     |\pause|
     class s :E (rs :: [*])|\pause|
-    (=:) : k ::: t -> t -> Rec '[ k ::: t ]|\pause|
+    (=:) : s ::: t -> t -> Rec '[ s ::: t ]|\pause|
     (<+>) : Rec ss -> Rec ts -> Rec (ss ++ ts)
   \end{lstlisting}
 \end{frame}
@@ -162,6 +164,50 @@
       x :: \text{"a"} ::: A\in\vec{rs}\implies \mathsf{Rec}\ \vec{rs}
     }
   \]
+\end{frame}
+
+\section{Universes \`a la Tarski}
+
+\begin{frame}
+  \frametitle{Universes \`a la Tarski}\pause
+  \begin{itemize}
+    \item A type $\mathcal{U}$ of \textbf{codes} for types.
+      \pause
+    \item Function $\llbracket-\rrbracket_\mathcal{U} : \mathcal{U}\to\mathbf{Type}$.
+      \pause
+      \[
+        \infer{
+          \Gamma\vdash\llbracket s\rrbracket_\mathcal{U} : \mathbf{Type}
+        }{
+          \Gamma\vdash s : \mathcal{U}
+        }
+      \]
+    \pause
+    \item The Tarski universe $\mathcal{U}$ is a set, but the ambient universe $\mathbf{Type}$ may not necessarily be.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{An Example Universe}
+  \pause
+  Let $\mathcal{F}$ be the universe of finite sets:
+  \pause
+  \begin{itemize}
+    \item Statics:
+      \pause
+      \[
+        \infer{\Gamma\vdash\mathcal{F} : \mathbf{Type}}{}
+        \qquad
+        \infer{\Gamma\vdash\textsf{fin}(n) : \mathcal{F}}{\Gamma\vdash n : \mathbb{N}}
+        \qquad
+        \infer{\Gamma\vdash\llbracket s \rrbracket_\mathcal{F} : \mathbf{Type}}{\Gamma\vdash s : \mathcal{F}}
+      \]
+      \pause
+    \item Dynamics:
+      \[
+        \infer{\Gamma\vdash\llbracket\textsf{fin}(n)\rrbracket_\mathcal{F} \mapsto \textsf{rec}_\mathbb{N}(n; s)}{}
+      \]
+  \end{itemize}
 \end{frame}
 
 \end{document}
