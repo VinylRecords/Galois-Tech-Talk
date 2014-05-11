@@ -7,7 +7,9 @@
 }
 \setbeamertemplate{itemize items}[default]
 \setbeamertemplate{enumerate items}[default]
-
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{headline}{}
+\setbeamertemplate{footline}{}
 
 \usepackage{times}  % fonts are up to you
 \usepackage{proof}
@@ -16,10 +18,26 @@
 \usepackage{graphicx}
 \usepackage{stmaryrd}
 
+\usepackage{tikz}
+\newcommand*\circled[1]{\tikz[baseline=(char.base)]{
+            \node[shape=circle,draw,double,inner sep=1pt] (char) {#1};}}
+
 \lstset{columns=fullflexible}
 \lstset{
   literate={->}{$\to$ }{1}
+           {(->)}{$(\to)$ }{1}
+           {=>}{$\Rightarrow$ }{1}
+           {<-:}{$\Mapsfrom$ }{1}
            {:E}{$\in$ }{1}
+           {forall}{$\forall$}{1}
+           {(<+>)}{($\oplus$) }{1}
+           {<+>}{$\oplus$ }{1}
+           {<<*>>}{$\circled{$\star$}$ }{1}
+           {<<map>>}{$\circled{\$}$ }{1}
+           {(<<map>>)}{($\circled{\$}$) }{1}
+           {(<<*>>)}{($\circled{$\star$}$) }{1}
+           {Nat}{$\mathbb{N}$}{1}
+           {Int}{$\mathbb{Z}$}{1}
            {[|}{$\llbracket$ }{1}
            {|]}{$\llbracket$ }{1},
   escapeinside=||,
@@ -42,27 +60,16 @@
 
 \section{Extensible Records and Row Polymorphism}
 
-\begin{frame}
-  \frametitle{Records in GHC 7.8}
-  Haskell Records are nominally typed. \pause
-  \[
-    \infer{
-      \Gamma\nvdash x : N.T
-    }{
-      \Gamma\vdash M.S \leadsto \{ \vec{rs} \} &
-      \Gamma\vdash N.T \leadsto \{ \vec{rs} \} &
-      \Gamma\vdash x : M.S
-    }
-  \]
-\end{frame}
-
 \begin{frame}[fragile]
-  \frametitle{Records in GHC 7.8}
-  Records may not share field names. \pause
-
+  \frametitle{Records in GHC 7.8}\pause
+  \begin{itemize}
+    \item Haskell records are nominally typed\pause
+    \item They may not share field names
+  \end{itemize}
+  \pause
   \begin{lstlisting}
-    data R = R { x :: X } |\pause|
-    data R' = R' { x :: X } -- ^ Error
+  data R = R { x :: X } |\pause|
+  data R' = R' { x :: X } -- ^ Error
   \end{lstlisting}
 \end{frame}
 
@@ -73,60 +80,16 @@
 \end{frame}
 
 \begin{frame}
-  \frametitle{Records in Standard ML}
-  \pause
-  \Large\centerline{slightly better}
-\end{frame}
-
-\begin{frame}[fragile]
-  \frametitle{Records in Standard ML}
-  \pause
-  Records are permutative, and not nominal.\pause
-  \[
-    \infer{\Gamma\vdash x:\{\vec{ts}\}}{
-      \Gamma\vdash x:\{\vec{ss}\} &
-      \Gamma\vdash ts\in\mathsf{permutations}(\vec{ss})
-    }
-  \]
-\end{frame}
-
-\begin{frame}
-  \frametitle{Records in OCaml}
-  \only<1-4> {
-  OCaml records are\pause
-  \begin{itemize}
-    \item structural\pause
-    \item endowed with a subtyping relation\pause
-    \item but more importantly...
-  \end{itemize}
-  }
-  \only<5>{
-    \Large\centerline{row polymorphic}
-  }
-\end{frame}
-
-\begin{frame}
-  \frametitle{Row Polymorphism}
-  \pause
-  \emph{Pick out the parts you care about, and quantify the rest.}
-
-  \centerline{--- Someone wise}
-\end{frame}
-
-\begin{frame}
-  \frametitle{Row Polymorphism}
+  \frametitle{Row Polymorphism}\pause
   How do we express the type of a function which adds a field to a record?\pause
-  \only<2>{
-    \[
-      \infer{ f(x) : \{a:A, b:B\} }{ x : \{a:A\} }
-    \]
-  }
   \only<3>{
-    \Large\centerline{NOPE}
+    \[
+      \infer{ f(x) : \{foo:A, bar:B\} }{ x : \{foo:A\} }
+    \]
   }
   \only<4>{
     \[
-      \infer{ f(x) : \{a:A, b:B; \vec{rs}\} }{ x : \{a:A; \vec{rs}\} }
+      \infer{ f(x) : \{foo:A, bar:B; \vec{rs}\} }{ x : \{foo:A; \vec{rs}\} }
     \]
   }
 \end{frame}
@@ -136,34 +99,31 @@
   \begin{itemize}
     \item supports type inference\pause
     \item is compositional\pause
-    \item is \textbf{modular}\pause
   \end{itemize}
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Roll Your Own in Haskell}\pause
   \begin{lstlisting}
-    data (s :: Symbol) ::: (t :: *) = Field |\pause|
+  data (s :: Symbol) ::: (t :: *) = Field |\pause|
 
-    data Rec :: [*] -> * where |\pause|
-      RNil :: Rec '[] |\pause|
-      (:&) :: !t -> !(Rec rs) -> Rec ((s ::: t) ': rs)
+  data Rec :: [*] -> * where |\pause|
+    RNil :: Rec '[] |\pause|
+    (:&) :: !t -> !(Rec rs) -> Rec ((s ::: t) ': rs)
 
-    |\pause|
-    class s :E (rs :: [*])|\pause|
-    (=:) : s ::: t -> t -> Rec '[ s ::: t ]|\pause|
-    (<+>) : Rec ss -> Rec ts -> Rec (ss ++ ts)
+  |\pause|
+  class s :E (rs :: [*])|\pause|
+  (=:) : s ::: t -> t -> Rec '[s ::: t]|\pause|
+  (<+>) : Rec ss -> Rec ts -> Rec (ss ++ ts)
   \end{lstlisting}
 \end{frame}
-\begin{frame}
+
+\begin{frame}[fragile]
   \frametitle{Roll Your Own in Haskell}\pause
-  \[
-    \infer{
-      f\, x :: (\text{"a"} ::: A\in\vec{rs}, \text{"b"} ::: B\in\vec{rs}) \implies \mathsf{Rec}\ \vec{rs}
-    }{
-      x :: \text{"a"} ::: A\in\vec{rs}\implies \mathsf{Rec}\ \vec{rs}
-    }
-  \]
+  \begin{lstlisting}
+  f :: (("a" ::: A :E rs) => Rec rs)
+    -> (("a" ::: A :E rs, "b" ::: B :E rs) => Rec rs)
+  \end{lstlisting}
 \end{frame}
 
 \section{Universes \`a la Tarski}
@@ -182,33 +142,358 @@
           \Gamma\vdash s : \mathcal{U}
         }
       \]
-    \pause
-    \item The Tarski universe $\mathcal{U}$ is a set, but the ambient universe $\mathbf{Type}$ may not necessarily be.
   \end{itemize}
 \end{frame}
 
 \begin{frame}
-  \frametitle{An Example Universe}
+  \frametitle{Universes \`a la Tarski}
+  \begin{center}
+    \includegraphics[width=2.8in]{universe-empty.pdf}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Universes \`a la Tarski}
+  \begin{center}
+    \includegraphics[width=2.8in]{universe-embedded.pdf}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Universes \`a la Tarski}
+  \begin{center}
+    \includegraphics[width=2.8in]{universe-populated.pdf}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Universes \`a la Tarski}
+  \begin{center}
+    \includegraphics[width=2.8in]{universe-interpretation.pdf}
+  \end{center}
+\end{frame}
+
+\begin{frame}
+  \frametitle{A Closed Universe}
   \pause
-  Let $\mathcal{F}$ be the universe of finite sets:
+  Let $\mathcal{A}$ be a universe of address books:
   \pause
   \begin{itemize}
     \item Statics:
       \pause
       \[
-        \infer{\Gamma\vdash\mathcal{F} : \mathbf{Type}}{}
+        \infer{\mathcal{A} : \mathbf{Type}}{}
         \qquad
-        \infer{\Gamma\vdash\textsf{fin}(n) : \mathcal{F}}{\Gamma\vdash n : \mathbb{N}}
+        \pause
+        \infer{\textsf{Label} : \mathbf{Type}}{}
         \qquad
-        \infer{\Gamma\vdash\llbracket s \rrbracket_\mathcal{F} : \mathbf{Type}}{\Gamma\vdash s : \mathcal{F}}
+        \pause
+        \infer{\textit{Home}, \textit{Office} : \textsf{Label}}{}
+      \]
+      \pause
+      \[
+        \infer{\textsf{Name} : \mathcal{A}}{}
+        \qquad
+        \pause
+        \infer{\textsf{Phone}[\ell],\textsf{Email}[\ell] : \mathcal{A}}{\ell : \textsf{Label}}
+        \qquad
+        \pause
+        \infer{\llbracket s \rrbracket_\mathcal{A} : \mathbf{Type}}{s : \mathcal{A}}
       \]
       \pause
     \item Dynamics:
+      \pause
       \[
-        \infer{\Gamma\vdash\llbracket\textsf{fin}(n)\rrbracket_\mathcal{F} \mapsto \textsf{rec}_\mathbb{N}(n; s)}{}
+        \infer{\llbracket \textsf{Name}\rrbracket_\mathcal{A} \leadsto \mathbf{string}}{}
+        \qquad
+        \pause
+        \infer{\llbracket \textsf{Email}[\ell]\rrbracket_\mathcal{A} \leadsto \mathbf{string}}{}
+      \]
+      \pause
+      \[
+        \infer{\llbracket \textsf{Phone}[\ell]\rrbracket_\mathcal{A} \leadsto \mathbb{N}\;\mathbf{list}}{}
       \]
   \end{itemize}
 \end{frame}
 
+
+\section{Type-Theoretic Records}
+
+\begin{frame}
+  \frametitle{Records as Products}
+  \pause
+  \only<2,3>{
+    Records: the product of the image of $\llbracket-\rrbracket_\mathcal{U}$ in $\mathbf{Type}$ restricted to a subset of the domain.
+  }
+  \only<4>{
+    \begin{center}
+      \includegraphics[width=2.8in]{universe-interpretation.pdf}
+    \end{center}
+  }
+  \only<5>{
+    \begin{center}
+      \includegraphics[width=2.8in]{universe-product.pdf}
+    \end{center}
+  }
+  \only<3,6>{
+    \[
+      \mathsf{record}_\mathcal{U} \leadsto
+        \sum_{\mathcal{V}:\mathbf{Type}}
+        \sum_{i:\mathcal{V}\hookrightarrow\mathcal{U}}
+        \prod_\mathcal{V} \llbracket-\rrbracket_\mathcal{U}\circ i
+    \]
+  }
+\end{frame}
+
+\begin{frame}
+  \frametitle{Example Record}
+  \[
+    \begin{aligned}
+      \mathsf{record}_\mathcal{U} &\leadsto
+        \sum_{\mathcal{V}:\mathbf{Type}}
+        \sum_{i:\mathcal{V}\hookrightarrow\mathcal{U}}
+        \prod_\mathcal{V} \llbracket-\rrbracket_\mathcal{U}\circ i \\\\ \pause
+      \mathcal{A}' &\leadsto \{ \mathsf{Name}, \mathsf{Email}\ \textit{Work} \}\\
+      ex &: \mathsf{record}_\mathcal{U}\\ \pause
+      ex &\leadsto \langle\mathcal{A}',\lambda x. x, \lambda.\\
+         &\qquad \{\mathsf{Name}\mapsto \text{"Robert Harper"};\\
+         &\qquad \ \mathsf{Email}\ \textit{Work}\mapsto \text{"rwh@cs.cmu.edu"} \}\rangle
+    \end{aligned}
+  \]
+\end{frame}
+
+\begin{frame}
+  \frametitle{Corecords as Sums}
+  \pause
+  \only<2,3>{
+    Corecords (extensible variants): the sum of the image of $\llbracket-\rrbracket_\mathcal{U}$ in $\mathbf{Type}$ restricted to a subset of the domain.
+  }
+  \only<4>{
+    \begin{center}
+      \includegraphics[width=2.8in]{universe-interpretation.pdf}
+    \end{center}
+  }
+  \only<5>{
+    \begin{center}
+      \includegraphics[width=2.8in]{universe-sum.pdf}
+    \end{center}
+  }
+  \only<3,6>{
+    \[
+      \mathsf{corecord}_\mathcal{U} \leadsto
+        \sum_{\mathcal{V}:\mathbf{Type}}
+        \sum_{i:\mathcal{V}\hookrightarrow\mathcal{U}}
+        \sum_\mathcal{V} \llbracket-\rrbracket_\mathcal{U}\circ i
+    \]
+  }
+\end{frame}
+
+\begin{frame}
+  \frametitle{Doing it in Haskell}
+  \pause
+  \begin{itemize}
+    \item Create a universe $\mathcal{U}$ at the type-level \pause
+    \item Use type families to approximate $\llbracket-\rrbracket_\mathcal{U}$ \pause
+    \item Parameterize \lstinline{Rec} by $\mathcal{U}$, $\llbracket-\rrbracket_\mathcal{U}$?
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Records in Haskell}
+  \begin{lstlisting}
+  data Rec :: (|$\mathcal{U}$| -> *) -> [ |$\mathcal{U}$| ] -> * where |\pause|
+    RNil :: Rec |$\llbracket-\rrbracket_\mathcal{U}$| '[] |\pause|
+    (:&) :: !|$\llbracket$|r|$\rrbracket_\mathcal{U}$| -> !(Rec |$\llbracket-\rrbracket_\mathcal{U}$| rs) -> Rec |$\llbracket-\rrbracket_\mathcal{U}$| (r ': rs)
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Recovering HList}\pause
+  \begin{lstlisting}
+  type HList rs = Rec (|$\Lambda\tau.\;\tau$|) rs|\pause|
+
+  ex :: HList [Int, Bool, String] |\pause|
+  ex = 34 :& True :& "vinyl" :& RNil
+  \end{lstlisting}
+\end{frame}
+
+\section{Effectful Records}
+
+\begin{frame}[fragile]
+  \frametitle{Validating Records}
+
+  \begin{lstlisting}
+  bob :: Rec |$\llbracket-\rrbracket_\mathcal{A}$| [Name, Email Work] |\pause|
+  bob = Name =: "Robert Harper"
+      <+> Email Work =: "rwh@cs.cmu.edu"
+  \end{lstlisting}
+  \pause
+  \begin{lstlisting}
+  validateName :: String -> Either Error String
+  validateEmail :: String -> Either Error String
+  validatePhone :: [Nat] -> Either Error [Nat]
+  \end{lstlisting}
+  \pause
+  \centerline{\textit{*unnnnnhhh...*}}
+  \pause
+  \begin{lstlisting}
+  validateContact
+    :: Rec |$\llbracket-\rrbracket_\mathcal{A}$| [Name, Email Work]
+    -> Either Error (Rec |$\llbracket-\rrbracket_\mathcal{A}$| [Name, Email Work])
+  \end{lstlisting}
+\end{frame}
+\begin{frame}
+  \centerline{\textbf{Welp.}}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Effects inside records}
+  \begin{lstlisting}
+  data Rec :: (|$\mathcal{U}$| -> *) -> [ |$\mathcal{U}$| ] -> * where
+    RNil :: Rec |$\llbracket-\rrbracket_\mathcal{U}$| '[]
+    (:&) :: !|$\llbracket$|r|$\rrbracket_\mathcal{U}$| -> !(Rec |$\llbracket-\rrbracket_\mathcal{U}$| rs) -> Rec |$\llbracket-\rrbracket_\mathcal{U}$| (r ': rs)
+  \end{lstlisting}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Effects inside records}
+  \begin{lstlisting}
+  data Rec :: (|$\mathcal{U}$| -> *) -> (* -> *) -> [ |$\mathcal{U}$| ] -> * where
+    RNil :: Rec |$\llbracket-\rrbracket_\mathcal{U}$| f '[]
+    (:&) :: !(f |$\llbracket$|r|$\rrbracket_\mathcal{U}$|) -> !(Rec |$\llbracket-\rrbracket_\mathcal{U}$| f rs) -> Rec |$\llbracket-\rrbracket_\mathcal{U}$| f (r ': rs)
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Compositional Validation}
+
+  \begin{lstlisting}
+  type Rec|$_\mathcal{A}$| = Rec |$\llbracket-\rrbracket_\mathcal{A}$| |\pause|
+  bob :: Rec|$_\mathcal{A}$| Identity [Name, Email Work] |\pause|
+  bob = Name =: "Robert Harper"
+      <+> Email Work =: "rwh@cs.cmu.edu"|\pause|
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Compositional Validation}
+  \begin{lstlisting}
+  type Validator a = a -> Either Error a|\pause|
+  validateName :: Rec|$_\mathcal{A}$| Validator '[Name]
+  validatePhone :: forall |$\ell$|. Rec|$_\mathcal{A}$| Validator '[Phone |$\ell$|]
+  validateEmail :: forall |$\ell$|. Rec|$_\mathcal{A}$| Validator '[Email |$\ell$|]|\pause|
+
+  type TotalContact =
+    [ Name, Email Home, Email Work
+    , Phone Home, Phone Work ]|\pause|
+
+  validateContact :: Rec|$_\mathcal{A}$| Validator TotalContact
+  validateContact = validateName
+                  <+> validateEmail
+                  <+> validateEmail
+                  <+> validatePhone
+                  <+> validatePhone
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Record Operators}\pause
+
+  \begin{lstlisting}
+  newtype Lift o f g x = Lift { runLift :: f x `o` g x }|\pause|
+
+  type Validator = Lift (->) Identity (Either Error)|\pause|
+
+  (<<*>>) :: Rec|$_\mathcal{U}$| (Lift (->) f g) rs -> Rec|$_\mathcal{U}$| f rs -> Rec|$_\mathcal{U}$| g rs|\pause|
+
+  rdist :: Applicative f => Rec|$_\mathcal{U}$| f rs -> f (Rec|$_\mathcal{U}$| Identity rs)
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Compositional Validation}
+
+  \begin{lstlisting}
+  newtype Lift o f g x = Lift { runLift :: f x `o` g x }
+  type Validator = Lift (->) Identity (Either Error)
+  (<<*>>) :: Rec|$_\mathcal{U}$| (Lift (->) f g) rs -> Rec|$_\mathcal{U}$| f rs -> Rec|$_\mathcal{U}$| g rs
+  rdist :: Applicative f => Rec|$_\mathcal{U}$| f rs -> f (Rec|$_\mathcal{U}$| Identity rs)|\pause|
+
+  validateContact :: Rec|$_\mathcal{A}$| Validator TotalContact|\pause|
+
+  bobValid :: Rec|$_\mathcal{A}$| (Either Error) [Name, Email Work]|\pause|
+  bobValid = cast validateContact <<*>> bob|\pause|
+
+  validBob :: Either Error (Rec|$_\mathcal{A}$| Identity [Name, Email Work])|\pause|
+  validBob = rdist bobValid
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Laziness as an effect}\pause
+
+  \begin{itemize}
+    \item Laziness considered harmful in the small\pause
+    \item Vinyl records are strict in their constructors\pause
+    \item Lazy variants usually accomplished through duplication\pause
+    \item[$\uparrow$] \textbf{Utterly unacceptable}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Laziness as an effect}\pause
+
+  \begin{lstlisting}
+  newtype Identity a = Identity { runIdentity :: a }|\pause|
+  data Thunk a = Thunk { unThunk :: a }|\pause|
+
+  type PlainRec|$_\mathcal{U}$| rs = Rec|$_\mathcal{U}$| Identity rs|\pause|
+  type LazyRec|$_\mathcal{U}$| rs = Rec|$_\mathcal{U}$| Thunk rs
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Concurrent Records with Async}\pause
+
+  \begin{lstlisting}
+  fetchName :: Rec|$_\mathcal{A}$| IO '[Name]|\pause|
+  fetchName = Name <-: someOperation|\pause|
+
+  fetchWorkEmail :: Rec|$_\mathcal{A}$| IO '[Email Work]|\pause|
+  fetchWorkEmail = Email Work <-: anotherOperation|\pause|
+
+  fetchBob :: Rec|$_\mathcal{A}$| IO [Name, Email Work]|\pause|
+  fetchBob = fetchName <+> fetchWorkEmail
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Concurrent Records with Async}\pause
+
+  \begin{lstlisting}
+  newtype Concurrently a
+    = Concurrently { runConcurrently :: IO a }|\pause|
+
+  (<<map>>) :: (forall a. f a -> g a) -> Rec|$_\mathcal{U}$| f rs -> Rec|$_\mathcal{U}$| g rs|\pause|
+
+  bobConcurrently :: Rec|$_\mathcal{A}$| Concurrently [Name, Email Work]|\pause|
+  bobConcurrently = Concurrently <<map>> fetchBob|\pause|
+
+  concurrentBob :: Concurrently (Rec|$_\mathcal{A}$| Identity [...])|\pause|
+  concurrentBob = rdist bobConcurrently
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Concurrent Records with Async}\pause
+
+  \begin{lstlisting}
+  fetchBob :: Rec|$_\mathcal{A}$| IO [Name, Email Work]
+  bobConcurrently :: Rec|$_\mathcal{A}$| Concurrently [Name, Email Work]
+  concurrentBob :: Concurrently (Rec|$_\mathcal{A}$| Identity [...])|\pause|
+
+  bob :: IO (Rec|$_\mathcal{A}$| Identity [Name, Email Work])|\pause|
+  bob = runConcurrently concurrentBob
+  \end{lstlisting}
+\end{frame}
 \end{document}
 
