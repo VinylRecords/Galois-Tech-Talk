@@ -4,6 +4,7 @@
 \mode<presentation>
 { \usetheme{Copenhagen}
   \usecolortheme{seahorse}{}
+  \usefonttheme{professionalfonts}
 }
 \setbeamertemplate{itemize items}[default]
 \setbeamertemplate{enumerate items}[default]
@@ -22,13 +23,21 @@
 \newcommand*\circled[1]{\tikz[baseline=(char.base)]{
             \node[shape=circle,draw,double,inner sep=1pt] (char) {#1};}}
 
+\DeclareMathOperator{\Wtype}{W}
+\DeclareMathOperator{\Mtype}{M}
+\DeclareMathAlphabet{\mathbfsf}{\encodingdefault}{\sfdefault}{sb}{n}
+\def\Type{\mathbfsf{Type}}
+
+
 \lstset{columns=fullflexible}
 \lstset{
   literate={->}{$\to$ }{1}
            {(->)}{$(\to)$ }{1}
            {=>}{$\Rightarrow$ }{1}
            {<-:}{$\Mapsfrom$ }{1}
+           {(<-:)}{($\Mapsfrom$)}{1}
            {:E}{$\in$ }{1}
+           {:<}{$\subseteq$ }{1}
            {forall}{$\forall$}{1}
            {(<+>)}{($\oplus$) }{1}
            {<+>}{$\oplus$ }{1}
@@ -37,9 +46,7 @@
            {(<<map>>)}{($\circled{\$}$) }{1}
            {(<<*>>)}{($\circled{$\star$}$) }{1}
            {Nat}{$\mathbb{N}$}{1}
-           {Int}{$\mathbb{Z}$}{1}
-           {[|}{$\llbracket$ }{1}
-           {|]}{$\llbracket$ }{1},
+           {Int}{$\mathbb{Z}$}{1},
   escapeinside=||,
   moredelim=**[is][\color{red}]{@}{@},
 }
@@ -80,6 +87,14 @@
 \end{frame}
 
 \begin{frame}
+  \frametitle{Structural Typing}\pause
+  \begin{itemize}
+    \item Sharing field names and accessors\pause
+    \item Record types may be characterized \emph{extensionsionally}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
   \frametitle{Row Polymorphism}\pause
   How do we express the type of a function which adds a field to a record?\pause
   \only<3>{
@@ -113,6 +128,8 @@
 
   |\pause|
   class s :E (rs :: [*])|\pause|
+  class ss :< (rs :: [*]) where
+    cast :: Rec rs -> Rec ss|\pause|
   (=:) : s ::: t -> t -> Rec '[s ::: t]|\pause|
   (<+>) : Rec ss -> Rec ts -> Rec (ss ++ ts)
   \end{lstlisting}
@@ -133,11 +150,11 @@
   \begin{itemize}
     \item A type $\mathcal{U}$ of \textbf{codes} for types.
       \pause
-    \item Function $\llbracket-\rrbracket_\mathcal{U} : \mathcal{U}\to\mathbf{Type}$.
+    \item Function $El_\mathcal{U} : \mathcal{U}\to\Type$.
       \pause
       \[
         \infer{
-          \Gamma\vdash\llbracket s\rrbracket_\mathcal{U} : \mathbf{Type}
+          \Gamma\vdash El_\mathcal{U}(s) : \Type
         }{
           \Gamma\vdash s : \mathcal{U}
         }
@@ -182,10 +199,10 @@
     \item Statics:
       \pause
       \[
-        \infer{\mathcal{A} : \mathbf{Type}}{}
+        \infer{\mathcal{A} : \Type}{}
         \qquad
         \pause
-        \infer{\textsf{Label} : \mathbf{Type}}{}
+        \infer{\textsf{Label} : \Type}{}
         \qquad
         \pause
         \infer{\textit{Home}, \textit{Office} : \textsf{Label}}{}
@@ -198,20 +215,20 @@
         \infer{\textsf{Phone}[\ell],\textsf{Email}[\ell] : \mathcal{A}}{\ell : \textsf{Label}}
         \qquad
         \pause
-        \infer{\llbracket s \rrbracket_\mathcal{A} : \mathbf{Type}}{s : \mathcal{A}}
+        \infer{El_\mathcal{A}(s) : \Type}{s : \mathcal{A}}
       \]
       \pause
     \item Dynamics:
       \pause
       \[
-        \infer{\llbracket \textsf{Name}\rrbracket_\mathcal{A} \leadsto \mathbf{string}}{}
+        \infer{El_\mathcal{A}(\textsf{Name}) \leadsto \mathbf{string}}{}
         \qquad
         \pause
-        \infer{\llbracket \textsf{Email}[\ell]\rrbracket_\mathcal{A} \leadsto \mathbf{string}}{}
+        \infer{El_\mathcal{A}(\textsf{Email}[\ell]) \leadsto \mathbf{string}}{}
       \]
       \pause
       \[
-        \infer{\llbracket \textsf{Phone}[\ell]\rrbracket_\mathcal{A} \leadsto \mathbb{N}\;\mathbf{list}}{}
+        \infer{El_\mathcal{A}(\textsf{Phone}[\ell]) \leadsto \mathsf{list}(\mathbb{N})}{}
       \]
   \end{itemize}
 \end{frame}
@@ -223,7 +240,7 @@
   \frametitle{Records as Products}
   \pause
   \only<2,3>{
-    Records: the product of the image of $\llbracket-\rrbracket_\mathcal{U}$ in $\mathbf{Type}$ restricted to a subset of the domain.
+    Records: the product of the image of $El_\mathcal{U}$ in $\Type$ restricted to a subset of $\mathcal{U}$.
   }
   \only<4>{
     \begin{center}
@@ -238,9 +255,8 @@
   \only<3,6>{
     \[
       \mathsf{record}_\mathcal{U} \leadsto
-        \sum_{\mathcal{V}:\mathbf{Type}}
-        \sum_{i:\mathcal{V}\hookrightarrow\mathcal{U}}
-        \prod_\mathcal{V} \llbracket-\rrbracket_\mathcal{U}\circ i
+        \sum_{\mathcal{V}\subset\mathcal{U}}
+        \prod_\mathcal{V} El_\mathcal{U}|_\mathcal{V}
     \]
   }
 \end{frame}
@@ -250,12 +266,11 @@
   \[
     \begin{aligned}
       \mathsf{record}_\mathcal{U} &\leadsto
-        \sum_{\mathcal{V}:\mathbf{Type}}
-        \sum_{i:\mathcal{V}\hookrightarrow\mathcal{U}}
-        \prod_\mathcal{V} \llbracket-\rrbracket_\mathcal{U}\circ i \\\\ \pause
-      \mathcal{A}' &\leadsto \{ \mathsf{Name}, \mathsf{Email}\ \textit{Work} \}\\
+        \sum_{\mathcal{V}\subset\mathcal{U}}
+        \prod_\mathcal{V} El_\mathcal{U}|_\mathcal{V}\\ \pause
+      \mathcal{A}' &\leadsto \{ \mathsf{Name}, \mathsf{Email}\ \textit{Work} \}\\ \pause
       ex &: \mathsf{record}_\mathcal{U}\\ \pause
-      ex &\leadsto \langle\mathcal{A}',\lambda x. x, \lambda.\\
+      ex &\leadsto \langle\mathcal{A}',\lambda.\\
          &\qquad \{\mathsf{Name}\mapsto \text{"Robert Harper"};\\
          &\qquad \ \mathsf{Email}\ \textit{Work}\mapsto \text{"rwh@cs.cmu.edu"} \}\rangle
     \end{aligned}
@@ -266,7 +281,7 @@
   \frametitle{Corecords as Sums}
   \pause
   \only<2,3>{
-    Corecords (extensible variants): the sum of the image of $\llbracket-\rrbracket_\mathcal{U}$ in $\mathbf{Type}$ restricted to a subset of the domain.
+    Corecords (extensible variants): the sum of the image of $El_\mathcal{U}$ in $\Type$ restricted to a subset of $\mathcal{U}$.
   }
   \only<4>{
     \begin{center}
@@ -281,9 +296,8 @@
   \only<3,6>{
     \[
       \mathsf{corecord}_\mathcal{U} \leadsto
-        \sum_{\mathcal{V}:\mathbf{Type}}
-        \sum_{i:\mathcal{V}\hookrightarrow\mathcal{U}}
-        \sum_\mathcal{V} \llbracket-\rrbracket_\mathcal{U}\circ i
+        \sum_{\mathcal{V}\subset\mathcal{U}}
+        \sum_\mathcal{V} El_\mathcal{U}|_\mathcal{V}
     \]
   }
 \end{frame}
@@ -293,8 +307,8 @@
   \pause
   \begin{itemize}
     \item Create a universe $\mathcal{U}$ at the type-level \pause
-    \item Use type families to approximate $\llbracket-\rrbracket_\mathcal{U}$ \pause
-    \item Parameterize \lstinline{Rec} by $\mathcal{U}$, $\llbracket-\rrbracket_\mathcal{U}$?
+    \item Use type families to approximate $El_\mathcal{U}$ \pause
+    \item Parameterize \lstinline{Rec} by $\mathcal{U}$, $El_\mathcal{U}$?
   \end{itemize}
 \end{frame}
 
@@ -302,8 +316,8 @@
   \frametitle{Records in Haskell}
   \begin{lstlisting}
   data Rec :: (|$\mathcal{U}$| -> *) -> [ |$\mathcal{U}$| ] -> * where |\pause|
-    RNil :: Rec |$\llbracket-\rrbracket_\mathcal{U}$| '[] |\pause|
-    (:&) :: !|$\llbracket$|r|$\rrbracket_\mathcal{U}$| -> !(Rec |$\llbracket-\rrbracket_\mathcal{U}$| rs) -> Rec |$\llbracket-\rrbracket_\mathcal{U}$| (r ': rs)
+    RNil :: Rec el|$_\mathcal{U}$| '[] |\pause|
+    (:&) :: !(el|$_\mathcal{U}$| r) -> !(Rec el|$_\mathcal{U}$| rs) -> Rec el|$_\mathcal{U}$| (r ': rs)
   \end{lstlisting}
 \end{frame}
 
@@ -323,7 +337,7 @@
   \frametitle{Validating Records}
 
   \begin{lstlisting}
-  bob :: Rec |$\llbracket-\rrbracket_\mathcal{A}$| [Name, Email Work] |\pause|
+  bob :: Rec El|$_\mathcal{A}$| [Name, Email Work] |\pause|
   bob = Name =: "Robert Harper"
       <+> Email Work =: "rwh@cs.cmu.edu"
   \end{lstlisting}
@@ -338,8 +352,8 @@
   \pause
   \begin{lstlisting}
   validateContact
-    :: Rec |$\llbracket-\rrbracket_\mathcal{A}$| [Name, Email Work]
-    -> Either Error (Rec |$\llbracket-\rrbracket_\mathcal{A}$| [Name, Email Work])
+    :: Rec El|$_\mathcal{A}$| [Name, Email Work]
+    -> Either Error (Rec El|$_\mathcal{A}$| [Name, Email Work])
   \end{lstlisting}
 \end{frame}
 \begin{frame}
@@ -350,16 +364,22 @@
   \frametitle{Effects inside records}
   \begin{lstlisting}
   data Rec :: (|$\mathcal{U}$| -> *) -> [ |$\mathcal{U}$| ] -> * where
-    RNil :: Rec |$\llbracket-\rrbracket_\mathcal{U}$| '[]
-    (:&) :: !|$\llbracket$|r|$\rrbracket_\mathcal{U}$| -> !(Rec |$\llbracket-\rrbracket_\mathcal{U}$| rs) -> Rec |$\llbracket-\rrbracket_\mathcal{U}$| (r ': rs)
+    RNil :: Rec el|$_\mathcal{U}$| '[]
+    (:&) :: !(el|$_\mathcal{U}$| r) -> !(Rec el|$_\mathcal{U}$| rs) -> Rec el|$_\mathcal{U}$| (r ': rs)
   \end{lstlisting}
 \end{frame}
 \begin{frame}[fragile]
   \frametitle{Effects inside records}
   \begin{lstlisting}
   data Rec :: (|$\mathcal{U}$| -> *) -> (* -> *) -> [ |$\mathcal{U}$| ] -> * where
-    RNil :: Rec |$\llbracket-\rrbracket_\mathcal{U}$| f '[]
-    (:&) :: !(f |$\llbracket$|r|$\rrbracket_\mathcal{U}$|) -> !(Rec |$\llbracket-\rrbracket_\mathcal{U}$| f rs) -> Rec |$\llbracket-\rrbracket_\mathcal{U}$| f (r ': rs)
+    RNil :: Rec el|$_\mathcal{U}$| f '[]
+    (:&) :: !(f (el|$_\mathcal{U}$| r)) -> !(Rec el|$_\mathcal{U}$| f rs) -> Rec el|$_\mathcal{U}$| f (r ': rs)|\pause|
+
+  (=:) : Applicative f => sing r -> el|$_\mathcal{U}$| r -> Rec el|$_\mathcal{U}$| f '[r]|\pause|
+  k =: x = pure x :& RNil|\pause|
+
+  (<-:) : sing r -> f (el|$_\mathcal{U}$| r) -> Rec el|$_\mathcal{U}$| f '[r]|\pause|
+  k <-: x = x :& RNil
   \end{lstlisting}
 \end{frame}
 
@@ -367,7 +387,7 @@
   \frametitle{Compositional Validation}
 
   \begin{lstlisting}
-  type Rec|$_\mathcal{A}$| = Rec |$\llbracket-\rrbracket_\mathcal{A}$| |\pause|
+  type Rec|$_\mathcal{A}$| = Rec El|$_\mathcal{A}$| |\pause|
   bob :: Rec|$_\mathcal{A}$| Identity [Name, Email Work] |\pause|
   bob = Name =: "Robert Harper"
       <+> Email Work =: "rwh@cs.cmu.edu"|\pause|
@@ -495,5 +515,186 @@
   bob = runConcurrently concurrentBob
   \end{lstlisting}
 \end{frame}
+
+\def\container{\mathsf{container}}
+\newcommand\mkcon[2]{#1\triangleleft#2}
+
+\begin{frame}
+  \frametitle{Containers: The Syntax for Data Types}
+
+  \[
+    \infer{\container : \Type}{}\pause
+    \qquad
+    \infer{\mkcon{\mathcal{U}}{El_\mathcal{U}} : \container}{
+      \mathcal{U} : \Type &
+      El_\mathcal{U} : \mathcal{U} \to \Type
+    }
+  \]\pause
+  \[
+    \infer{C.\mathsf{Sh} : \Type}{C : \container}\pause
+    \qquad
+    \infer{C.\mathsf{Sh} \leadsto \mathcal{U}}{C \leadsto \mkcon{\mathcal{U}}{El_\mathcal{U}}}
+  \]\pause
+  \[
+    \infer{C.\mathsf{Po} : C.\mathsf{Sh} \to \Type}{C : \container}\pause
+    \qquad
+    \infer{C.\mathsf{Po} \leadsto El_\mathcal{U}}{C \leadsto \mkcon{\mathcal{U}}{El_\mathcal{U}}}
+  \]
+\end{frame}
+
+\begin{frame}
+  \frametitle{Restricting Containers}
+  \[
+    \infer{C|_\mathcal{V} : \container}{
+      C : \container &
+      \mathcal{V} \subseteq C.\mathsf{Sh}
+    }
+  \]\pause
+  \[
+    \infer{
+      C|_\mathcal{V}\leadsto \mkcon{\mathcal{V}}{El_\mathcal{U}}
+    }{
+      C \leadsto \mkcon{\mathcal{U}}{El_\mathcal{U}}
+    }
+  \]
+\end{frame}
+\begin{frame}
+  \frametitle{Container Lifting}
+  \[
+    \infer{C\uparrow F : \container}{
+      C : \container &
+      F : \Type \to \Type
+    }
+  \]\pause
+  \[
+    \infer{
+      \mkcon{C\uparrow F \leadsto \mathcal{U}}{F\circ El_\mathcal{U}}
+    }{
+      C \leadsto \mkcon{\mathcal{U}}{El_\mathcal{U}}
+    }
+  \]
+\end{frame}
+
+\begin{frame}
+  \frametitle{A Menagerie of Quantifiers}\pause
+  \only<2>{
+    \emph{Dependent Products:}
+    \[
+      \infer{\prod_AB : \Type}{
+        \Gamma\vdash A: \Type &
+        \Gamma, x:A \vdash B: \Type
+      }
+    \]
+    \[
+      \infer{\Gamma\vdash\lambda x. e : \prod_AB}{
+        \Gamma,x:A\vdash e: B[x]
+      }
+    \]
+  }
+  \only<3>{
+    \emph{Dependent Sums:}
+    \[
+      \infer{\sum_AB : \Type}{
+        \Gamma\vdash A: \Type &
+        \Gamma, x:A \vdash B: \Type
+      }
+    \]
+    \[
+      \infer{\langle a,b\rangle : \sum_AB}{
+        \Gamma\vdash a:A &
+        \Gamma\vdash b : B[a]
+      }
+    \]
+  }
+  \only<4>{
+    \emph{Inductive Types:}
+    \[
+      \infer{\Wtype_AB : \Type}{
+        \Gamma\vdash A: \Type &
+        \Gamma, x:A \vdash B: \Type
+      }
+    \]
+    \[
+      \infer{
+        \mathsf{sup}(a; v.\, b) : \Wtype_AB
+      }{
+        \Gamma\vdash a:A &
+        \Gamma, v:B[a] \vdash b: \Wtype_AB
+      }
+    \]
+  }
+  \only<5>{
+    \emph{Coinductive Types:}
+    \[
+      \infer{\Mtype_AB : \Type}{
+        \Gamma\vdash A: \Type &
+        \Gamma, x:A \vdash B: \Type
+      }
+    \]
+    \[
+      \infer{
+        \mathsf{inf}(a; v.\, b) : \Mtype_AB
+      }{
+        \Gamma\vdash a:A &
+        \Gamma, v:B[a] \vdash b: \infty\left(\Mtype_AB\right)
+      }
+    \]
+  }
+\end{frame}
+
+\begin{frame}
+  \frametitle{A Scheme for Quantifiers}
+  \pause
+  \[
+    \infer{\Gamma\vdash Q\ \mathsf{quantifier}}{
+      \Gamma,A:\Type, (x:A\vdash B:\Type) \vdash Q_AB:\Type
+    }
+  \]
+\end{frame}
+
+\begin{frame}
+  \frametitle{Quantifiers Give Containers Semantics}
+  \[
+    \infer{\Gamma\vdash Q\ \mathsf{quantifier}}{
+      \Gamma,A:\Type, (x:A\vdash B:\Type) \vdash Q_AB:\Type
+    }
+  \]\pause
+  \[
+    \infer{\llbracket C\rrbracket_Q : \Type}{
+      C : \container &
+      Q\ \mathsf{quantifier}
+    }
+  \]\pause
+  \[
+    \infer{
+      \llbracket C\rrbracket_Q \leadsto Q_\mathcal{U} El_\mathcal{U}
+    }{
+      C \leadsto \mkcon{\mathcal{U}}{El_\mathcal{U}}
+    }
+  \]
+\end{frame}
+
+\begin{frame}
+  \frametitle{Vinyl Records as Containers}\pause
+  Records and corecords are finite products and sums respectively.\pause
+  \[
+    \begin{aligned}
+      \mathsf{Rec}\ El_\mathcal{U}\ F\ rs
+        &\cong \left\llbracket (\mkcon{\mathcal{U}}{El_\mathcal{U}})|_{rs\ni-}\uparrow F \right\rrbracket_\Pi\\ \pause
+      \mathsf{CoRec}\ El_\mathcal{U}\ F\ rs
+        &\cong \left\llbracket (\mkcon{\mathcal{U}}{El_\mathcal{U}})|_{rs\ni-}\uparrow F \right\rrbracket_\Sigma\\ \pause
+      \\
+      ???\ El_\mathcal{U}\ F\ rs
+        &\cong \left\llbracket (\mkcon{\mathcal{U}}{El_\mathcal{U}})|_{rs\ni-}\uparrow F \right\rrbracket_\mathrm{W}\\ \pause
+      ???\ El_\mathcal{U}\ F\ rs
+        &\cong \left\llbracket (\mkcon{\mathcal{U}}{El_\mathcal{U}})|_{rs\ni-}\uparrow F \right\rrbracket_\mathrm{M}
+    \end{aligned}
+  \]
+\end{frame}
+
+\begin{frame}
+  \centerline{\textbf{Questions}}
+\end{frame}
+
 \end{document}
 
