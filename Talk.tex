@@ -81,12 +81,6 @@
 \end{frame}
 
 \begin{frame}
-  \frametitle{Records in GHC 7.8}
-  \only<1>{Records are...}
-  \only<2>{\Large\centerline{anticompositional}}
-\end{frame}
-
-\begin{frame}
   \frametitle{Structural Typing}\pause
   \begin{itemize}
     \item Sharing field names and accessors\pause
@@ -437,17 +431,6 @@
   validBob :: Either Error (Rec|$_\mathcal{A}$| Identity [Name, Email Work])|\pause|
   validBob = rdist bobValid
   \end{lstlisting}
-\end{frame}
-
-\begin{frame}
-  \frametitle{Laziness as an effect}\pause
-
-  \begin{itemize}
-    \item Laziness considered harmful in the small\pause
-    \item Vinyl records are strict in their constructors\pause
-    \item Lazy variants usually accomplished through duplication\pause
-    \item[$\uparrow$] \textbf{Utterly unacceptable}
-  \end{itemize}
 \end{frame}
 
 \begin{frame}[fragile]
