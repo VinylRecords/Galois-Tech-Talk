@@ -109,14 +109,6 @@
   }
 \end{frame}
 
-\begin{frame}
-  \frametitle{Row Polymorphism}\pause
-  \begin{itemize}
-    \item supports type inference\pause
-    \item is compositional\pause
-  \end{itemize}
-\end{frame}
-
 \begin{frame}[fragile]
   \frametitle{Roll Your Own in Haskell}\pause
   \begin{lstlisting}
@@ -138,8 +130,7 @@
 \begin{frame}[fragile]
   \frametitle{Roll Your Own in Haskell}\pause
   \begin{lstlisting}
-  f :: (("a" ::: A :E rs) => Rec rs)
-    -> (("a" ::: A :E rs, "b" ::: B :E rs) => Rec rs)
+  f :: "foo" ::: A :E rs => Rec rs -> Rec ("bar" ::: B ': rs)
   \end{lstlisting}
 \end{frame}
 
@@ -552,7 +543,7 @@
   \]\pause
   \[
     \infer{
-      C|_\mathcal{V}\leadsto \mkcon{\mathcal{V}}{El_\mathcal{U}}
+      C|_\mathcal{V}\leadsto \mkcon{\mathcal{V}}{El_\mathcal{U}|_\mathcal{V}}
     }{
       C \leadsto \mkcon{\mathcal{U}}{El_\mathcal{U}}
     }
@@ -580,7 +571,7 @@
   \only<2>{
     \emph{Dependent Products:}
     \[
-      \infer{\prod_AB : \Type}{
+      \infer{\Gamma\vdash\prod_AB : \Type}{
         \Gamma\vdash A: \Type &
         \Gamma, x:A \vdash B: \Type
       }
@@ -594,13 +585,13 @@
   \only<3>{
     \emph{Dependent Sums:}
     \[
-      \infer{\sum_AB : \Type}{
+      \infer{\Gamma\vdash\sum_AB : \Type}{
         \Gamma\vdash A: \Type &
         \Gamma, x:A \vdash B: \Type
       }
     \]
     \[
-      \infer{\langle a,b\rangle : \sum_AB}{
+      \infer{\Gamma\vdash\langle a,b\rangle : \sum_AB}{
         \Gamma\vdash a:A &
         \Gamma\vdash b : B[a]
       }
@@ -609,14 +600,14 @@
   \only<4>{
     \emph{Inductive Types:}
     \[
-      \infer{\Wtype_AB : \Type}{
+      \infer{\Gamma\vdash\Wtype_AB : \Type}{
         \Gamma\vdash A: \Type &
         \Gamma, x:A \vdash B: \Type
       }
     \]
     \[
       \infer{
-        \mathsf{sup}(a; v.\, b) : \Wtype_AB
+        \Gamma\vdash\mathsf{sup}(a; v.\, b) : \Wtype_AB
       }{
         \Gamma\vdash a:A &
         \Gamma, v:B[a] \vdash b: \Wtype_AB
@@ -626,14 +617,14 @@
   \only<5>{
     \emph{Coinductive Types:}
     \[
-      \infer{\Mtype_AB : \Type}{
+      \infer{\Gamma\vdash\Mtype_AB : \Type}{
         \Gamma\vdash A: \Type &
         \Gamma, x:A \vdash B: \Type
       }
     \]
     \[
       \infer{
-        \mathsf{inf}(a; v.\, b) : \Mtype_AB
+        \Gamma\vdash\mathsf{inf}(a; v.\, b) : \Mtype_AB
       }{
         \Gamma\vdash a:A &
         \Gamma, v:B[a] \vdash b: \infty\left(\Mtype_AB\right)
