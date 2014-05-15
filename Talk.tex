@@ -263,6 +263,45 @@
 \end{frame}
 
 \begin{frame}
+  \frametitle{Presheaves}\pause
+
+  A presheaf on some category $X$ is a functor
+  $\mathcal{O}(X)^{\mathrm{op}}\to\mathbf{Type}$, where $\mathcal{O}$ is the
+  category of open sets of $X$ for whatever topology you have chosen.
+\end{frame}
+
+\begin{frame}
+  \frametitle{Topologies on some space $X$}\pause
+
+  \begin{itemize}
+    \item What are the open sets on $X$?\pause
+    \item The empty set and $X$ are open sets
+    \item Finite intersections of open sets are open
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Records are Presheaves}\pause
+
+  \begin{itemize}
+    \item Let $\mathcal{O} = \mathcal{P}$, the discrete topology\pause
+    \item Then records on a universe $X$ give rise to a presheaf $\mathcal{R}$: subset inclusions are taken to casts from larger to smaller records
+  \end{itemize}
+  \pause
+
+  \[
+    \begin{aligned}
+      \text{for } V\subseteq X\quad \mathcal{R}(V) &:\equiv \prod_V El_X|_V : \mathbf{Type}\\ \pause
+      \text{for } i : V\hookrightarrow U\quad \mathcal{R}(i) &:\equiv \mathsf{cast} : \mathcal{R}(U)\to\mathcal{R}(V)
+    \end{aligned}
+  \]
+\end{frame}
+
+\begin{frame}
+  \frametitle{Records are Sheaves}\pause
+\end{frame}
+
+\begin{frame}
   \frametitle{Corecords as Sums}
   \pause
   \only<2,3>{
