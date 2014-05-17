@@ -1,4 +1,4 @@
-\documentclass[12pt]{beamer}
+\documentclass[tikz, 12pt]{beamer}
 
 % for themes, etc.
 \mode<presentation>
@@ -20,6 +20,8 @@
 \usepackage{stmaryrd}
 
 \usepackage{tikz}
+\usetikzlibrary{positioning}
+
 \newcommand*\circled[1]{\tikz[baseline=(char.base)]{
             \node[shape=circle,draw,double,inner sep=1pt] (char) {#1};}}
 
@@ -84,7 +86,7 @@
   \frametitle{Structural Typing}\pause
   \begin{itemize}
     \item Sharing field names and accessors\pause
-    \item Record types may be characterized \emph{extensionsionally}
+    \item Record types may be characterized \emph{structurally}
   \end{itemize}
 \end{frame}
 
@@ -297,8 +299,47 @@
   \]
 \end{frame}
 
-\begin{frame}
+\begin{frame}[fragile]
   \frametitle{Records are Sheaves}\pause
+
+  For a cover $U = \bigcup_i U_i$ on $X$, then:\\
+  \medskip
+
+  \only<2>{
+    \begin{tikzpicture}[node distance=3.5cm, auto]
+      \node (FU) {$\mathcal{R}(U)$};
+      \node (PFUi) [right of=FU] {$\prod_i\mathcal{R}(U_i)$};
+      \node (PFUij) [right of=PFUi] {$\prod_{i,j}\mathcal{R}(U_i\cap U_j)$};
+
+      \draw[->] (FU) to node {$e$} (PFUi);
+      \draw[transform canvas={yshift=1mm}][->] (PFUi) to node {$p$} (PFUij);
+      \draw[transform canvas={yshift=-1mm}][->] (PFUi) to node [swap] {$q$} (PFUij);
+    \end{tikzpicture}\\
+    is an equalizer, where
+  }
+  \only<3>{
+    \begin{tikzpicture}[node distance=3.5cm, auto]
+      \node (FU) {$\mathcal{R}(U)$};
+      \node (PFUi) [right of=FU] {$\prod_i\mathcal{R}(U_i)$};
+      \node (PFUij) [right of=PFUi] {$\prod_{i,j}\mathcal{R}(U_i\cap U_j)$};
+      \node (G) [below of=PFUi] {$\Gamma$};
+
+      \draw[->] (FU) to node {$e$} (PFUi);
+      \draw[->] (G) to node [swap] {$m$} (PFUi);
+      \draw[->, dashed] (G) to node {$!u$} (FU);
+      \draw[transform canvas={yshift=1mm}][->] (PFUi) to node {$p$} (PFUij);
+      \draw[transform canvas={yshift=-1mm}][->] (PFUi) to node [swap] {$q$} (PFUij);
+    \end{tikzpicture}\\
+    where
+  }
+
+  \[
+    \begin{aligned}
+      e &= \lambda r. \lambda i.\ \mathsf{cast}_{U_i}(r)\\
+      p &= \lambda f. \lambda i. \lambda j.\ \mathsf{cast}_{U_i\cap U_j}(f(i))\\
+      q &= \lambda f. \lambda i. \lambda j.\ \mathsf{cast}_{U_i\cap U_j}(f(j))\\
+    \end{aligned}
+  \]
 \end{frame}
 
 \begin{frame}
@@ -337,18 +378,33 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Records in Haskell}
+  \frametitle{Records in Haskell}\pause
   \begin{lstlisting}
   data Rec :: (|$\mathcal{U}$| -> *) -> [ |$\mathcal{U}$| ] -> * where |\pause|
     RNil :: Rec el|$_\mathcal{U}$| '[] |\pause|
     (:&) :: !(el|$_\mathcal{U}$| r) -> !(Rec el|$_\mathcal{U}$| rs) -> Rec el|$_\mathcal{U}$| (r ': rs)
   \end{lstlisting}
 \end{frame}
+\begin{frame}[fragile]
+  \frametitle{Records in Haskell (Actually)}\pause
+
+  \begin{lstlisting}
+  data TyFun :: * -> * -> *|\pause|
+  type family (f :: TyFun k l -> *) $ (x :: k) :: l|\pause|
+
+  data Rec :: (TyFun |$\mathcal{U}$| * -> *) -> [ |$\mathcal{U}$| ] -> * where
+    RNil :: Rec el|$_\mathcal{U}$| '[]
+    (:&) :: !(el|$_\mathcal{U}$| $ r) -> !(Rec el|$_\mathcal{U}$| rs) -> Rec el|$_\mathcal{U}$| (r ': rs)
+  \end{lstlisting}
+\end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Recovering HList}\pause
   \begin{lstlisting}
-  type HList rs = Rec (|$\Lambda\tau.\;\tau$|) rs|\pause|
+  data Id :: (TyFun k k) -> * where
+  type instance Id $ x = x|\pause|
+
+  type HList rs = Rec Id rs|\pause|
 
   ex :: HList [Int, Bool, String] |\pause|
   ex = 34 :& True :& "vinyl" :& RNil
@@ -387,22 +443,22 @@
 \begin{frame}[fragile]
   \frametitle{Effects inside records}
   \begin{lstlisting}
-  data Rec :: (|$\mathcal{U}$| -> *) -> [ |$\mathcal{U}$| ] -> * where
+  data Rec :: (TyFun |$\mathcal{U}$| * -> *) -> [ |$\mathcal{U}$| ] -> * where
     RNil :: Rec el|$_\mathcal{U}$| '[]
-    (:&) :: !(el|$_\mathcal{U}$| r) -> !(Rec el|$_\mathcal{U}$| rs) -> Rec el|$_\mathcal{U}$| (r ': rs)
+    (:&) :: !(el|$_\mathcal{U}$| $ r) -> !(Rec el|$_\mathcal{U}$| rs) -> Rec el|$_\mathcal{U}$| (r ': rs)
   \end{lstlisting}
 \end{frame}
 \begin{frame}[fragile]
   \frametitle{Effects inside records}
   \begin{lstlisting}
-  data Rec :: (|$\mathcal{U}$| -> *) -> (* -> *) -> [ |$\mathcal{U}$| ] -> * where
+  data Rec :: (TyFun |$\mathcal{U}$| * -> *) -> (* -> *) -> [ |$\mathcal{U}$| ] -> * where
     RNil :: Rec el|$_\mathcal{U}$| f '[]
-    (:&) :: !(f (el|$_\mathcal{U}$| r)) -> !(Rec el|$_\mathcal{U}$| f rs) -> Rec el|$_\mathcal{U}$| f (r ': rs)|\pause|
+    (:&) :: !(f (el|$_\mathcal{U}$| $ r)) -> !(Rec el|$_\mathcal{U}$| f rs) -> Rec el|$_\mathcal{U}$| f (r ': rs)|\pause|
 
-  (=:) : Applicative f => sing r -> el|$_\mathcal{U}$| r -> Rec el|$_\mathcal{U}$| f '[r]|\pause|
+  (=:) : Applicative f => sing r -> el|$_\mathcal{U}$| $ r -> Rec el|$_\mathcal{U}$| f '[r]|\pause|
   k =: x = pure x :& RNil|\pause|
 
-  (<-:) : sing r -> f (el|$_\mathcal{U}$| r) -> Rec el|$_\mathcal{U}$| f '[r]|\pause|
+  (<-:) : sing r -> f (el|$_\mathcal{U}$| $ r) -> Rec el|$_\mathcal{U}$| f '[r]|\pause|
   k <-: x = x :& RNil
   \end{lstlisting}
 \end{frame}
