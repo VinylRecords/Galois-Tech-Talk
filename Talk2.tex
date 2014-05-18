@@ -1,0 +1,161 @@
+\documentclass[tikz, 12pt]{beamer}
+
+% for themes, etc.
+\mode<presentation>
+{ \usetheme{Copenhagen}
+  \usecolortheme{seahorse}{}
+  \usefonttheme{professionalfonts}
+}
+\setbeamertemplate{itemize items}[default]
+\setbeamertemplate{enumerate items}[default]
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{headline}{}
+\setbeamertemplate{footline}{}
+
+\usepackage{times}  % fonts are up to you
+\usepackage{proof}
+\usepackage{listings}
+\usepackage{courier}
+\usepackage{graphicx}
+\usepackage{stmaryrd}
+
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+
+\newcommand*\circled[1]{\tikz[baseline=(char.base)]{
+            \node[shape=circle,draw,double,inner sep=1pt] (char) {#1};}}
+
+\DeclareMathOperator{\Wtype}{W}
+\DeclareMathOperator{\Mtype}{M}
+\DeclareMathAlphabet{\mathbfsf}{\encodingdefault}{\sfdefault}{sb}{n}
+\def\Type{\mathbfsf{Type}}
+
+
+\lstset{columns=fullflexible}
+\lstset{
+  literate={->}{$\to$ }{1}
+           {(->)}{$(\to)$ }{1}
+           {=>}{$\Rightarrow$ }{1}
+           {<-:}{$\Mapsfrom$ }{1}
+           {(<-:)}{($\Mapsfrom$)}{1}
+           {:E}{$\in$ }{1}
+           {:<}{$\subseteq$ }{1}
+           {forall}{$\forall$}{1}
+           {(<+>)}{($\oplus$) }{1}
+           {<+>}{$\oplus$ }{1}
+           {<<*>>}{$\circled{$\star$}$ }{1}
+           {<<map>>}{$\circled{\$}$ }{1}
+           {(<<map>>)}{($\circled{\$}$) }{1}
+           {(<<*>>)}{($\circled{$\star$}$) }{1}
+           {Nat}{$\mathbb{N}$}{1}
+           {Int}{$\mathbb{Z}$}{1},
+  escapeinside=||,
+  moredelim=**[is][\color{red}]{@}{@},
+}
+\lstset{language=Haskell}
+
+% these will be used later in the title page
+\title{A (Very) Tiny Taste of Vinyl}
+\author{Jon Sterling\\
+    FOBO
+}
+
+\begin{document}
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\section{Effectful Records}
+
+\begin{frame}[fragile]
+  \frametitle{Validating Records}\pause
+  \begin{lstlisting}
+  bob :: Rec [Name, Email Work] |\pause|
+  bob = Name =: "Robert Harper"
+      <+> Email Work =: "rwh@cs.cmu.edu"
+  \end{lstlisting}
+  \pause
+  \begin{lstlisting}
+  validateName :: String -> Either Error String
+  validateEmail :: String -> Either Error String
+  validatePhone :: [Nat] -> Either Error [Nat]
+  \end{lstlisting}
+  \pause
+  \centerline{\textit{*unnnnnhhh...*}}
+  \pause
+  \begin{lstlisting}
+  validateContact
+    :: Rec [Name, Email Work]
+    -> Either Error (Rec [Name, Email Work])
+  \end{lstlisting}
+\end{frame}
+\begin{frame}
+  \centerline{\textbf{Welp.}}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Compositional Validation}
+
+  \begin{lstlisting}
+  bob :: Rec|$_\mathcal{A}$| [Name, Email Work] |\pause|
+  bob = Name =: "Robert Harper"
+      <+> Email Work =: "rwh@cs.cmu.edu"|\pause|
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Compositional Validation}
+  \begin{lstlisting}
+  type Validator a = a -> Either Error a|\pause|
+  validateName :: Rec|$_\mathcal{A}$| Validator '[Name]
+  validatePhone :: forall |$\ell$|. Rec|$_\mathcal{A}$| Validator '[Phone |$\ell$|]
+  validateEmail :: forall |$\ell$|. Rec|$_\mathcal{A}$| Validator '[Email |$\ell$|]|\pause|
+
+  type TotalContact =
+    [ Name, Email Home, Email Work
+    , Phone Home, Phone Work ]|\pause|
+
+  validateContact :: Rec|$_\mathcal{A}$| Validator TotalContact
+  validateContact = validateName
+                  <+> validateEmail
+                  <+> validateEmail
+                  <+> validatePhone
+                  <+> validatePhone
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Record Operators}\pause
+
+  \begin{lstlisting}
+  newtype Lift o f g x = Lift { runLift :: f x `o` g x }|\pause|
+
+  type Validator = Lift (->) Identity (Either Error)|\pause|
+
+  (<<*>>) :: Rec|$_\mathcal{U}$| (Lift (->) f g) rs -> Rec|$_\mathcal{U}$| f rs -> Rec|$_\mathcal{U}$| g rs|\pause|
+
+  rdist :: Applicative f => Rec|$_\mathcal{U}$| f rs -> f (Rec|$_\mathcal{U}$| Identity rs)
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Compositional Validation}
+
+  \begin{lstlisting}
+  newtype Lift o f g x = Lift { runLift :: f x `o` g x }
+  type Validator = Lift (->) Identity (Either Error)
+  (<<*>>) :: Rec|$_\mathcal{U}$| (Lift (->) f g) rs -> Rec|$_\mathcal{U}$| f rs -> Rec|$_\mathcal{U}$| g rs
+  rdist :: Applicative f => Rec|$_\mathcal{U}$| f rs -> f (Rec|$_\mathcal{U}$| Identity rs)|\pause|
+
+  validateContact :: Rec|$_\mathcal{A}$| Validator TotalContact|\pause|
+
+  bobValid :: Rec|$_\mathcal{A}$| (Either Error) [Name, Email Work]|\pause|
+  bobValid = cast validateContact <<*>> bob|\pause|
+
+  validBob :: Either Error (Rec|$_\mathcal{A}$| Identity [Name, Email Work])|\pause|
+  validBob = rdist bobValid
+  \end{lstlisting}
+\end{frame}
+
+\end{document}
+
