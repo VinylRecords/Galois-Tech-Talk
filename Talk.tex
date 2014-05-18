@@ -57,7 +57,7 @@
 % these will be used later in the title page
 \title{Programming in Vinyl}
 \author{Jon Sterling\\
-    FOBO
+  @jonsterling
 }
 
 \begin{document}
@@ -119,14 +119,16 @@
   class ss :< (rs :: [*]) where
     cast :: Rec rs -> Rec ss|\pause|
   (=:) : s ::: t -> t -> Rec '[s ::: t]|\pause|
-  (<+>) : Rec ss -> Rec ts -> Rec (ss ++ ts)
+  (<+>) : Rec ss -> Rec ts -> Rec (ss ++ ts)|\pause|
+  lens : s ::: t :E rs => s ::: t -> Lens' (Rec rs) t
   \end{lstlisting}
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Roll Your Own in Haskell}\pause
   \begin{lstlisting}
-  f :: "foo" ::: A :E rs => Rec rs -> Rec ("bar" ::: B ': rs)
+  f :: Rec ("foo" ::: A ': rs)
+    -> Rec ("bar" ::: B ': "foo" ::: A ': rs)
   \end{lstlisting}
 \end{frame}
 
