@@ -510,84 +510,6 @@ concurrentBob = runConcurrently (rdist bobConcurrently)
   }
 \end{frame}
 
-\begin{frame}
-  \frametitle{Presheaves}\pause
-
-  A presheaf on some space $X$ is a functor
-  $\mathcal{O}(X)^{\mathrm{op}}\to\mathbf{Type}$, where $\mathcal{O}$ is the
-  category of open sets of $X$ for whatever topology you have chosen.
-\end{frame}
-
-\begin{frame}
-  \frametitle{Topologies on some space $X$}\pause
-
-  \begin{itemize}
-    \item What are the open sets on $X$?\pause
-    \item The empty set and $X$ are open sets\pause
-    \item The union of open sets is open\pause
-    \item Finite intersections of open sets are open
-  \end{itemize}
-\end{frame}
-
-\begin{frame}
-  \frametitle{Records are presheaves}\pause
-
-  \begin{itemize}
-    \item Let $\mathcal{O} = \mathcal{P}$, the discrete topology\pause
-    \item Then records on a universe $X$ give rise to a presheaf $\mathcal{R}$: subset inclusions are taken to casts from larger to smaller records
-  \end{itemize}
-  \pause
-
-  \[
-    \begin{aligned}
-      \text{for } U\in\mathcal{P}(X)\quad \mathcal{R}(V) &:\equiv \prod_U El_X|_U : \mathbf{Type}\\ \pause
-      \text{for } i : V\hookrightarrow U\quad \mathcal{R}(i) &:\equiv \mathsf{cast} : \mathcal{R}(U)\to\mathcal{R}(V)
-    \end{aligned}
-  \]
-\end{frame}
-
-\begin{frame}[fragile]
-  \frametitle{Records are sheaves}\pause
-
-  For a cover $U = \bigcup_i U_i$ on $X$, then:\\
-  \medskip
-
-  \only<2>{
-    \begin{tikzpicture}[node distance=3.5cm, auto]
-      \node (FU) {$\mathcal{R}(U)$};
-      \node (PFUi) [right of=FU] {$\prod_i\mathcal{R}(U_i)$};
-      \node (PFUij) [right of=PFUi] {$\prod_{i,j}\mathcal{R}(U_i\cap U_j)$};
-
-      \draw[->] (FU) to node {$e$} (PFUi);
-      \draw[transform canvas={yshift=1mm}][->] (PFUi) to node {$p$} (PFUij);
-      \draw[transform canvas={yshift=-1mm}][->] (PFUi) to node [swap] {$q$} (PFUij);
-    \end{tikzpicture}\\
-    is an equalizer, where
-  }
-  \only<3>{
-    \begin{tikzpicture}[node distance=3.5cm, auto]
-      \node (FU) {$\mathcal{R}(U)$};
-      \node (PFUi) [right of=FU] {$\prod_i\mathcal{R}(U_i)$};
-      \node (PFUij) [right of=PFUi] {$\prod_{i,j}\mathcal{R}(U_i\cap U_j)$};
-      \node (G) [below of=PFUi] {$\Gamma$};
-
-      \draw[->] (FU) to node {$e$} (PFUi);
-      \draw[->] (G) to node [swap] {$m$} (PFUi);
-      \draw[->, dashed] (G) to node {$!u$} (FU);
-      \draw[transform canvas={yshift=1mm}][->] (PFUi) to node {$p$} (PFUij);
-      \draw[transform canvas={yshift=-1mm}][->] (PFUi) to node [swap] {$q$} (PFUij);
-    \end{tikzpicture}\\
-    where
-  }
-
-  \[
-    \begin{aligned}
-      e &= \lambda r. \lambda i.\ \mathsf{cast}_{U_i}(r)\\
-      p &= \lambda f. \lambda i. \lambda j.\ \mathsf{cast}_{U_i\cap U_j}(f(i))\\
-      q &= \lambda f. \lambda i. \lambda j.\ \mathsf{cast}_{U_i\cap U_j}(f(j))\\
-    \end{aligned}
-  \]
-\end{frame}
 \def\container{\mathsf{container}}
 \newcommand\mkcon[2]{#1\triangleleft#2}
 
@@ -760,6 +682,85 @@ concurrentBob = runConcurrently (rdist bobConcurrently)
         &\cong \left\llbracket F\bullet(\mkcon{\mathcal{U}}{El_\mathcal{U}})|_{rs\ni-} \right\rrbracket_\mathrm{W}\\ \pause
       ???\ El_\mathcal{U}\ F\ rs
         &\cong \left\llbracket F\bullet(\mkcon{\mathcal{U}}{El_\mathcal{U}})|_{rs\ni-}\right\rrbracket_\mathrm{M}
+    \end{aligned}
+  \]
+\end{frame}
+
+\begin{frame}
+  \frametitle{Presheaves}\pause
+
+  A presheaf on some space $X$ is a functor
+  $\mathcal{O}(X)^{\mathrm{op}}\to\mathbf{Type}$, where $\mathcal{O}$ is the
+  category of open sets of $X$ for whatever topology you have chosen.
+\end{frame}
+
+\begin{frame}
+  \frametitle{Topologies on some space $X$}\pause
+
+  \begin{itemize}
+    \item What are the open sets on $X$?\pause
+    \item The empty set and $X$ are open sets\pause
+    \item The union of open sets is open\pause
+    \item Finite intersections of open sets are open
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Records are presheaves}\pause
+
+  \begin{itemize}
+    \item Let $\mathcal{O} = \mathcal{P}$, the discrete topology\pause
+    \item Then records on a universe $X$ give rise to a presheaf $\mathcal{R}$: subset inclusions are taken to casts from larger to smaller records
+  \end{itemize}
+  \pause
+
+  \[
+    \begin{aligned}
+      \text{for } U\in\mathcal{P}(X)\quad \mathcal{R}(V) &:\equiv \prod_U El_X|_U : \mathbf{Type}\\ \pause
+      \text{for } i : V\hookrightarrow U\quad \mathcal{R}(i) &:\equiv \mathsf{cast} : \mathcal{R}(U)\to\mathcal{R}(V)
+    \end{aligned}
+  \]
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Records are sheaves}\pause
+
+  For a cover $U = \bigcup_i U_i$ on $X$, then:\\
+  \medskip
+
+  \only<2>{
+    \begin{tikzpicture}[node distance=3.5cm, auto]
+      \node (FU) {$\mathcal{R}(U)$};
+      \node (PFUi) [right of=FU] {$\prod_i\mathcal{R}(U_i)$};
+      \node (PFUij) [right of=PFUi] {$\prod_{i,j}\mathcal{R}(U_i\cap U_j)$};
+
+      \draw[->] (FU) to node {$e$} (PFUi);
+      \draw[transform canvas={yshift=1mm}][->] (PFUi) to node {$p$} (PFUij);
+      \draw[transform canvas={yshift=-1mm}][->] (PFUi) to node [swap] {$q$} (PFUij);
+    \end{tikzpicture}\\
+    is an equalizer, where
+  }
+  \only<3>{
+    \begin{tikzpicture}[node distance=3.5cm, auto]
+      \node (FU) {$\mathcal{R}(U)$};
+      \node (PFUi) [right of=FU] {$\prod_i\mathcal{R}(U_i)$};
+      \node (PFUij) [right of=PFUi] {$\prod_{i,j}\mathcal{R}(U_i\cap U_j)$};
+      \node (G) [below of=PFUi] {$\Gamma$};
+
+      \draw[->] (FU) to node {$e$} (PFUi);
+      \draw[->] (G) to node [swap] {$m$} (PFUi);
+      \draw[->, dashed] (G) to node {$!u$} (FU);
+      \draw[transform canvas={yshift=1mm}][->] (PFUi) to node {$p$} (PFUij);
+      \draw[transform canvas={yshift=-1mm}][->] (PFUi) to node [swap] {$q$} (PFUij);
+    \end{tikzpicture}\\
+    where
+  }
+
+  \[
+    \begin{aligned}
+      e &= \lambda r. \lambda i.\ \mathsf{cast}_{U_i}(r)\\
+      p &= \lambda f. \lambda i. \lambda j.\ \mathsf{cast}_{U_i\cap U_j}(f(i))\\
+      q &= \lambda f. \lambda i. \lambda j.\ \mathsf{cast}_{U_i\cap U_j}(f(j))\\
     \end{aligned}
   \]
 \end{frame}
