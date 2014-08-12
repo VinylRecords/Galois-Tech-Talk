@@ -25,8 +25,8 @@
 \newcommand*\circled[1]{\tikz[baseline=(char.base)]{
             \node[shape=circle,draw,double,inner sep=1pt] (char) {#1};}}
 
-\DeclareMathOperator{\Wtype}{W}
-\DeclareMathOperator{\Mtype}{M}
+\DeclareMathOperator*{\Wtype}{\textrm{\LARGE W}}
+\DeclareMathOperator*{\Mtype}{\textrm{\LARGE M}}
 \DeclareMathAlphabet{\mathbfsf}{\encodingdefault}{\sfdefault}{sb}{n}
 \def\Type{\mathbfsf{Type}}
 
@@ -279,7 +279,7 @@ type instance Id $ x = x~\pause~
 
 type HList rs = Rec Id rs~\pause~
 
-ex :: HList [Int, Bool, String] ~\pause~
+ex :: HList [Int, Bool, String]
 ex = 34 :& True :& "vinyl" :& RNil
   \end{lstlisting}
 \end{frame}
@@ -375,7 +375,7 @@ validateContact = validateName
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Record effect operators}
+  \frametitle{Record effect operators}\pause
   \begin{lstlisting}
 (<<*>>) :: Rec el (Lift (->) f g) rs -> Rec el f rs -> Rec el g rs~\pause~
 
@@ -391,10 +391,13 @@ rdist = rtraverse (fmap Identity)
 \begin{frame}[fragile]
   \frametitle{Compositional validation}
   \begin{lstlisting}
-bobValid :: AddrRec (Either Error) [Name, Email Work]~\pause~
+bob :: AddrRec [Name, Email Work]
+validateContact :: AddrRec Validator TotalContact~\pause~
+
+bobValid :: AddrRec (Either Error) [Name, Email Work]
 bobValid = cast validateContact <<*>> bob~\pause~
 
-validBob :: Either Error (AddrRec Identity [Name, Email Work])~\pause~
+validBob :: Either Error (AddrRec Identity [Name, Email Work])
 validBob = rdist bobValid
   \end{lstlisting}
 \end{frame}
@@ -403,7 +406,7 @@ validBob = rdist bobValid
   \frametitle{Laziness as an effect}\pause
 
   \begin{lstlisting}
-newtype Identity a = Identity { runIdentity :: a }~\pause~
+newtype Identity a = Identity { runIdentity :: a }
 data Thunk a = Thunk { unThunk :: a }~\pause~
 
 type PlainRec el rs = Rec el Identity rs~\pause~
@@ -415,13 +418,13 @@ type LazyRec el rs = Rec el Thunk rs
   \frametitle{Concurrent records with Async}\pause
 
   \begin{lstlisting}
-fetchName :: AddrRec IO '[Name]~\pause~
+fetchName :: AddrRec IO '[Name]
 fetchName = SName <-: runDB nameQuery ~\pause~
 
-fetchWorkEmail :: AddrRec IO '[Email Work]~\pause~
+fetchWorkEmail :: AddrRec IO '[Email Work]
 fetchWorkEmail = SEmail SWork <-: runDB emailQuery ~\pause~
 
-fetchBob :: AddrRec IO [Name, Email Work]~\pause~
+fetchBob :: AddrRec IO [Name, Email Work]
 fetchBob = fetchName <+> fetchWorkEmail
   \end{lstlisting}
 \end{frame}
@@ -435,10 +438,10 @@ newtype Concurrently a
 
 (<<map>>) :: (forall a. f a -> g a) -> Rec el f rs -> Rec el g rs~\pause~
 
-bobConcurrently :: Rec el Concurrently [Name, Email Work]~\pause~
+bobConcurrently :: Rec el Concurrently [Name, Email Work]
 bobConcurrently = Concurrently <<map>> fetchBob~\pause~
 
-concurrentBob :: IO (PlainRec el [Name, Email Work])~\pause~
+concurrentBob :: IO (PlainRec el [Name, Email Work])
 concurrentBob = runConcurrently (rdist bobConcurrently)
   \end{lstlisting}
 \end{frame}
@@ -514,176 +517,36 @@ concurrentBob = runConcurrently (rdist bobConcurrently)
 \newcommand\mkcon[2]{#1\triangleleft#2}
 
 \begin{frame}
-  \frametitle{Containers: the syntax for data types}
-
-  \[
-    \infer{\container : \Type}{}\pause
-    \qquad
-    \infer{\mkcon{\mathcal{U}}{El_\mathcal{U}} : \container}{
-      \mathcal{U} : \Type &
-      El_\mathcal{U} : \mathcal{U} \to \Type
-    }
-  \]\pause
-  \[
-    \infer{C.\mathsf{Sh} : \Type}{C : \container}\pause
-    \qquad
-    \infer{C.\mathsf{Sh} \leadsto \mathcal{U}}{C \leadsto \mkcon{\mathcal{U}}{El_\mathcal{U}}}
-  \]\pause
-  \[
-    \infer{C.\mathsf{Po} : C.\mathsf{Sh} \to \Type}{C : \container}\pause
-    \qquad
-    \infer{C.\mathsf{Po} \leadsto El_\mathcal{U}}{C \leadsto \mkcon{\mathcal{U}}{El_\mathcal{U}}}
-  \]
-\end{frame}
-
-\begin{frame}
-  \frametitle{Restricting containers}
-  \[
-    \infer{C|_\mathcal{V} : \container}{
-      C : \container &
-      \mathcal{V} \subseteq C.\mathsf{Sh}
-    }
-  \]\pause
-  \[
-    \infer{
-      C|_\mathcal{V}\leadsto \mkcon{\mathcal{V}}{El_\mathcal{U}|_\mathcal{V}}
-    }{
-      C \leadsto \mkcon{\mathcal{U}}{El_\mathcal{U}}
-    }
-  \]
-\end{frame}
-\begin{frame}
-  \frametitle{Container lifting}
-  \[
-    \infer{F\bullet C : \container}{
-      C : \container &
-      F : \Type \to \Type
-    }
-  \]\pause
-  \[
-    \infer{
-      \mkcon{F\bullet C \leadsto \mathcal{U}}{F\circ El_\mathcal{U}}
-    }{
-      C \leadsto \mkcon{\mathcal{U}}{El_\mathcal{U}}
-    }
-  \]
-\end{frame}
-
-\begin{frame}
-  \frametitle{A menagerie of quantifiers}\pause
-  \only<2>{
-    \emph{Dependent Products:}
-    \[
-      \infer{\Gamma\vdash\prod_AB : \Type}{
-        \Gamma\vdash A: \Type &
-        \Gamma, x:A \vdash B: \Type
-      }
-    \]
-    \[
-      \infer{\Gamma\vdash\lambda x. e : \prod_AB}{
-        \Gamma,x:A\vdash e: B[x]
-      }
-    \]
-  }
-  \only<3>{
-    \emph{Dependent Sums:}
-    \[
-      \infer{\Gamma\vdash\sum_AB : \Type}{
-        \Gamma\vdash A: \Type &
-        \Gamma, x:A \vdash B: \Type
-      }
-    \]
-    \[
-      \infer{\Gamma\vdash\langle a,b\rangle : \sum_AB}{
-        \Gamma\vdash a:A &
-        \Gamma\vdash b : B[a]
-      }
-    \]
-  }
-  \only<4>{
-    \emph{Inductive Types:}
-    \[
-      \infer{\Gamma\vdash\Wtype_AB : \Type}{
-        \Gamma\vdash A: \Type &
-        \Gamma, x:A \vdash B: \Type
-      }
-    \]
-    \[
-      \infer{
-        \Gamma\vdash\mathsf{sup}(a; v.\, b) : \Wtype_AB
-      }{
-        \Gamma\vdash a:A &
-        \Gamma, v:B[a] \vdash b: \Wtype_AB
-      }
-    \]
-  }
-  \only<5>{
-    \emph{Coinductive Types:}
-    \[
-      \infer{\Gamma\vdash\Mtype_AB : \Type}{
-        \Gamma\vdash A: \Type &
-        \Gamma, x:A \vdash B: \Type
-      }
-    \]
-    \[
-      \infer{
-        \Gamma\vdash\mathsf{inf}(a; v.\, b) : \Mtype_AB
-      }{
-        \Gamma\vdash a:A &
-        \Gamma, v:B[a] \vdash b: \infty\left(\Mtype_AB\right)
-      }
-    \]
-  }
-\end{frame}
-
-\begin{frame}
-  \frametitle{A scheme for quantifiers}
-  \pause
-  \[
-    \infer{\Gamma\vdash Q\ \mathsf{quantifier}}{
-      \Gamma,A:\Type, (x:A\vdash B:\Type) \vdash Q_AB:\Type
-    }
-  \]
-\end{frame}
-
-\begin{frame}
-  \frametitle{Quantifiers give containers semantics}
-  \[
-    \infer{\Gamma\vdash Q\ \mathsf{quantifier}}{
-      \Gamma,A:\Type, (x:A\vdash B:\Type) \vdash Q_AB:\Type
-    }
-  \]\pause
-  \[
-    \infer{\llbracket C\rrbracket_Q : \Type}{
-      C : \container &
-      Q\ \mathsf{quantifier}
-    }
-  \]\pause
-  \[
-    \infer{
-      \llbracket C\rrbracket_Q \leadsto Q_\mathcal{U} El_\mathcal{U}
-    }{
-      C \leadsto \mkcon{\mathcal{U}}{El_\mathcal{U}}
-    }
-  \]
-\end{frame}
-
-\begin{frame}
-  \frametitle{Vinyl records as containers}\pause
+  \frametitle{Vinyl: beyond records?}\pause
   Records and corecords are finite products and sums respectively.\pause
   \[
     \begin{aligned}
-      \mathsf{Rec}\ El_\mathcal{U}\ F\ rs
-      &\cong \left\llbracket F\bullet (\mkcon{\mathcal{U}}{El_\mathcal{U}})|_{rs\ni-}\right\rrbracket_\Pi\\ \pause
-      \mathsf{CoRec}\ El_\mathcal{U}\ F\ rs
-        &\cong \left\llbracket F\bullet(\mkcon{\mathcal{U}}{El_\mathcal{U}})|_{rs\ni-}\right\rrbracket_\Sigma\\ \pause
-      \\
-      ???\ El_\mathcal{U}\ F\ rs
-        &\cong \left\llbracket F\bullet(\mkcon{\mathcal{U}}{El_\mathcal{U}})|_{rs\ni-} \right\rrbracket_\mathrm{W}\\ \pause
-      ???\ El_\mathcal{U}\ F\ rs
-        &\cong \left\llbracket F\bullet(\mkcon{\mathcal{U}}{El_\mathcal{U}})|_{rs\ni-}\right\rrbracket_\mathrm{M}
+      \mathsf{Rec}(El_\mathcal{U}; F; rs)
+      &:\equiv \prod_{\mathcal{U}|_{rs}}F\circ El_\mathcal{U}\\\pause
+      \mathsf{CoRec}(El_\mathcal{U}; F; rs)
+      &:\equiv \sum_{\mathcal{U}|_{rs}}F\circ El_\mathcal{U}\\\pause
+      \mathsf{Data}(El_\mathcal{U}; F; rs)
+      &:\equiv \Wtype_{\mathcal{U}|_{rs}}F\circ El_\mathcal{U}\\\pause
+      \mathsf{Codata}(El_\mathcal{U}; F; rs)
+      &:\equiv \Mtype_{\mathcal{U}|_{rs}}F\circ El_\mathcal{U}
     \end{aligned}
   \]
+\end{frame}
+
+\begin{frame}
+  \frametitle{Vinyl: beyond records?}
+  \only<1>{
+    \[ \mkcon{\left(\mathcal{U}|_{rs}\right)}{\left(F\circ El_\mathcal{U}\right)} \]
+  }
+  \only<2>{
+    \[ \left\llbracket\mkcon{\left(\mathcal{U}|_{rs}\right)}{\left(F\circ El_\mathcal{U}\right)}\right\rrbracket_\Pi \]
+  }
+  \only<3>{
+    \[ \left\llbracket\mkcon{\left(\mathcal{U}|_{rs}\right)}{\left(F\circ El_\mathcal{U}\right)}\right\rrbracket_\text{W} \]
+  }
+  \only<4>{
+    \[ \left\llbracket\mkcon{\left(\mathcal{U}|_{rs}\right)}{\left(F\circ El_\mathcal{U}\right)}\right\rrbracket_\text{M} \]
+  }
 \end{frame}
 
 \begin{frame}
@@ -716,7 +579,7 @@ concurrentBob = runConcurrently (rdist bobConcurrently)
 
   \[
     \begin{aligned}
-      \text{for } U\in\mathcal{P}(X)\quad \mathcal{R}(V) &:\equiv \prod_U El_X|_U : \mathbf{Type}\\ \pause
+      \text{for } U\in\mathcal{P}(X)\quad \mathcal{R}(U) &:\equiv \prod_U El_X|_U : \mathbf{Type}\\ \pause
       \text{for } i : V\hookrightarrow U\quad \mathcal{R}(i) &:\equiv \mathsf{cast} : \mathcal{R}(U)\to\mathcal{R}(V)
     \end{aligned}
   \]
@@ -775,11 +638,12 @@ concurrentBob = runConcurrently (rdist bobConcurrently)
         \{ \mathsf{Phone}[\ell] \mid \ell\in\mathsf{Label} \}\\\pause
       El_\mathcal{A} &:\equiv \lambda\_. \mathbf{String}\\\pause
       T &:\equiv \{ U\in\mathcal{P}(\mathcal{A}) \mid \mathsf{Name}[M]\in U\\&\hspace{90pt}\Rightarrow \{\mathsf{Name}[F],\mathsf{Name}[L]\}\subseteq U\}\\\pause
-      ex &: \llbracket\mathcal{A}\triangleleft_T El_\mathcal{A}\rrbracket_\Pi\\\pause
+      ex &: \mathcal{R}_T(\{\mathsf{Name}[t]\mid t\in\mathsf{NameType}\})\\
       ex &:\equiv
         \{\mathsf{Name}[F]\mapsto \text{"Robert"};\\
           &\qquad \mathsf{Name}[M]\mapsto\text{"W"};\\
           &\qquad \mathsf{Name}[L]\mapsto\text{"Harper"}\}\\\pause
+      \color{red}{nope} &: \color{red}{\mathcal{R}_T(\{\mathsf{Name}[M],\mathsf{Phone}[Work]\})}\\
       \color{red}{nope} &:\equiv\color{red}{\{\mathsf{Name}[M]\mapsto\text{"W"};}\\
           &\qquad \color{red}{\mathsf{Phone}[Work]\mapsto\text{"5555555555"}\}}
     \end{aligned}
